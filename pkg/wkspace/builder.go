@@ -1,9 +1,9 @@
 package wkspace
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -60,14 +60,14 @@ func New(client *api.Client, inst *api.Installation) (*Workspace, error) {
 	}
 
 	wk := &Workspace{
-		Provider: prov,
+		Provider:     prov,
 		Installation: inst,
-		Charts: ci,
-		Terraform: ti,
-		Config: &conf,
-		Context: ctx,
-		Manifest: project,
-		Links: links,
+		Charts:       ci,
+		Terraform:    ti,
+		Config:       &conf,
+		Context:      ctx,
+		Manifest:     project,
+		Links:        links,
 	}
 	return wk, nil
 }
@@ -161,6 +161,10 @@ func (wk *Workspace) buildExecution(repoRoot string) error {
 
 	exec, _ := executor.GetExecution(filepath.Join(wkspaceRoot), "deploy")
 
+	if wk.Provider.Name() == provider.EQUINIX && name == "bootstrap" {
+		return executor.DefaultClusterAPIExecution(name, exec, "packet", wk.Manifest).Flush(repoRoot)
+	}
+
 	return executor.DefaultExecution(name, exec).Flush(repoRoot)
 }
 
@@ -181,7 +185,7 @@ func DiffedRepos() ([]string, error) {
 	}
 
 	for _, file := range files {
-		parts := strings.Split(file, string([]byte{ filepath.Separator }))
+		parts := strings.Split(file, string([]byte{filepath.Separator}))
 		if len(parts) <= 1 {
 			continue
 		}
@@ -206,7 +210,7 @@ func isRepo(name string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	return utils.Exists(filepath.Join(repoRoot, name, "manifest.yaml"))
 }
 
